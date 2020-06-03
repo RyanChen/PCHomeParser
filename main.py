@@ -24,6 +24,7 @@ product_info = dict()
 product_list = dict()
 
 def Parse():
+    product_id_list = list()
     driver = webdriver.PhantomJS(executable_path=r'D:\play_ground\phantomjs-2.1.1-windows\bin\phantomjs.exe')  # PhantomJs
     driver.get(URL)  # 輸入範例網址，交給瀏覽器 
     pageSource = driver.page_source  # 取得網頁原始碼
@@ -42,6 +43,7 @@ def Parse():
     for products in soup.select('{}'.format("div#Block4Container dd")):
         is_send = False
         product_info = parse_product(products)
+        product_id_list.append(product_info['id'])
         is_send = update_product_list(product_info)
 
         if is_send:
@@ -51,6 +53,7 @@ def Parse():
     for products in soup.select('{}'.format("dl#ProdGridContainer dd")):
         is_send = False
         product_info = parse_product(products)
+        product_id_list.append(product_info['id'])
         is_send = update_product_list(product_info)
 
         if is_send:
@@ -58,6 +61,8 @@ def Parse():
             save_data(DATA_FILE)
 
     driver.close()  # 關閉瀏覽器
+
+    old_product_clean_up(product_id_list)
 
 def parse_product(products):
     product_id = products.find(attrs = {"_id" : True})
@@ -148,6 +153,13 @@ def send_prd_info(product_info):
 
     SendNotifyMessage(token, msg, file)
 
+def old_product_clean_up(product_id_list):
+    if product_id_list:
+        for key in list(product_list):
+            if key not in product_id_list:
+                del product_list[key]
+    save_data(DATA_FILE)
+
 def Run():
     while True:
         error_times = 0
@@ -157,6 +169,7 @@ def Run():
         except:
             error_times += 1
             print("error times = " + str(error_times))
+            print(traceback.format_exc())
             pass
         time.sleep(60)
 

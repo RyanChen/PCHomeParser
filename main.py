@@ -7,6 +7,7 @@ import time
 import os
 import traceback
 import json
+from selenium.webdriver.chrome.options import Options
 
 try:
     # PyInstaller creates a temp folder and stores path in _MEIPASS
@@ -24,11 +25,31 @@ product_info = dict()
 product_list = dict()
 
 def Parse():
+    chrome_options = Options()
+    chrome_options.add_argument('--headless')
+    chrome_options.add_argument('--disable-gpu')
+    chrome_options.add_argument('--no-sandbox')
+
+    # 指定在要使用的 Agent 身份，會做這項設置，是因為PCHome，會阻擋 Chrome Headless 的 Agent
+    ua = "Mozilla/5.0 (Windows NT 10.0; WOW64; rv:53.0) Gecko/20100101 Firefox/53.0"
+    chrome_options.add_argument("user-agent={}".format(ua))
+    chrome_options.add_argument("--incognito")  # 使用無痕模式
+    chrome_options.add_argument('log-level=3')
+    #info(default) = 0
+    #warning = 1
+    #LOG_ERROR = 2
+    #LOG_FATAL = 3
+
+    executable_path = './chromedriver.exe'
+    driver = webdriver.Chrome(executable_path=executable_path, chrome_options=chrome_options)
+    driver.get(URL)
     product_id_list = list()
-    driver = webdriver.PhantomJS(executable_path=r'D:\play_ground\phantomjs-2.1.1-windows\bin\phantomjs.exe')  # PhantomJs
-    driver.get(URL)  # 輸入範例網址，交給瀏覽器 
+    # driver = webdriver.PhantomJS(executable_path=r'D:\play_ground\phantomjs-2.1.1-windows\bin\phantomjs.exe')  # PhantomJs
+    # driver.get(URL)  # 輸入範例網址，交給瀏覽器
     pageSource = driver.page_source  # 取得網頁原始碼
     soup = BeautifulSoup(pageSource, "html.parser")
+    driver.close()  # 關閉瀏覽器
+    # print(soup.prettify())
     # print(soup.find(id="Block4Container").prettify())  #輸出排版後的HTML內容
 
     for item in soup.select('{}'.format("div.mL.mEvt a.prod_img img")):
@@ -59,8 +80,6 @@ def Parse():
         if is_send:
             send_prd_info(product_info)
             save_data(DATA_FILE)
-
-    driver.close()  # 關閉瀏覽器
 
     old_product_clean_up(product_id_list)
 
@@ -171,7 +190,7 @@ def Run():
             print("error times = " + str(error_times))
             print(traceback.format_exc())
             pass
-        time.sleep(60)
+        time.sleep(30)
 
 def load_data(file):
     try:
